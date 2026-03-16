@@ -71,7 +71,28 @@ func main() {
 		return
 	}
 
-	// 5. 流式聊天
+	// 5. 建立 WebSocket 长连接 (实时推送)
+	fmt.Println("\n建立 WebSocket 长连接...")
+	err = client.Connect(ctx, acosmi.WSConfig{
+		Topics: []string{"balance", "system"},
+		OnEvent: func(e acosmi.WSEvent) {
+			fmt.Printf("[WS 事件] type=%s topic=%s data=%s\n", e.Type, e.Topic, string(e.Data))
+		},
+		OnConnect: func() {
+			fmt.Println("[WS] 已连接")
+		},
+		OnDisconnect: func(err error) {
+			fmt.Printf("[WS] 断开: %v\n", err)
+		},
+	})
+	if err != nil {
+		fmt.Printf("WebSocket 连接失败 (非致命): %v\n", err)
+	} else {
+		defer client.Disconnect()
+		fmt.Printf("WebSocket 已连接: %v\n", client.IsConnected())
+	}
+
+	// 6. 流式聊天
 	modelID := models[0].ID
 	fmt.Printf("\n使用模型 %s 进行对话:\n", models[0].Name)
 
@@ -105,7 +126,7 @@ func main() {
 		log.Fatalf("流式聊天错误: %v", err)
 	}
 
-	// 6. 退出时可选登出
+	// 7. 退出时可选登出
 	// client.Logout(ctx)
 }
 
